@@ -20,7 +20,7 @@
     "heroku-postbuild": "cd client && yarn && yarn run build",
     "lint": "eslint app/**/*.js",
     "start": "node app/server.js",
-    "test": "jest app/ --coverage",
+    "test": "jest app/ --coverage --detectOpenHandles",
     "test:client": "cd client && yarn && yarn test --coverage"
   },
   "eslintConfig": {
