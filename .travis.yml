@@ -10,3 +10,5 @@ script:
 # Travis-CI Configuration
 cache: yarn
 sudo:  false # Enable containerized builds.
+services:
+  - mongodb
