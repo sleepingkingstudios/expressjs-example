@@ -24,4 +24,8 @@ const connect = () => (
   ))
 );
 
-module.exports = { close, connect, DATABASE_NAME };
+module.exports = {
+  DATABASE_NAME,
+  close,
+  connect,
+};
