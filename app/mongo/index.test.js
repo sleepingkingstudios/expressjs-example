@@ -1,38 +1,38 @@
 const { MongoClient } = require('mongodb');
+const { clearSeeds, seed } = require('./seeds');
 
 const {
   DATABASE_NAME,
   close,
   connect,
-} = require('./mongo');
+  connection,
+} = require('./index');
 
-const insertSeeds = async () => {
-  const client = await connect();
-  const db = client.db('roses_test');
-  const collection = db.collection('widgets');
-
-  await collection.insertMany([
+const seedWidgets = async () => {
+  await seed('widgets', [
     { name: 'widget' },
     { name: 'gadget' },
     { name: 'whatsit' },
   ]);
-
-  await client.close(true);
 };
 
-const clearSeeds = async () => {
-  const client = await connect();
-  const db = client.db('roses_test');
-  const collection = db.collection('widgets');
+const findWidgets = db => (
+  new Promise(
+    (resolve, reject) => {
+      const collection = db.collection('widgets');
 
-  await collection.deleteMany();
-
-  await client.close(true);
-};
+      collection
+        .find({})
+        .toArray((err, data) => (
+          err ? reject(err) : resolve(data)
+        ));
+    },
+  )
+);
 
 describe('DATABASE_NAME', () => {
-  it('should be == "roses"', () => {
-    expect(DATABASE_NAME).toEqual('roses');
+  it('should be == "roses_test"', () => {
+    expect(DATABASE_NAME).toEqual('roses_test');
   });
 });
 
@@ -54,20 +54,6 @@ describe('close()', () => {
 });
 
 describe('connect()', () => {
-  const findWidgets = db => (
-    new Promise(
-      (resolve, reject) => {
-        const collection = db.collection('widgets');
-
-        collection
-          .find({})
-          .toArray((err, data) => (
-            err ? reject(err) : resolve(data)
-          ));
-      },
-    )
-  );
-
   it('should return a mongo client', async () => {
     const client = await connect();
 
@@ -87,9 +73,9 @@ describe('connect()', () => {
   });
 
   describe('when there are many documents', () => {
-    beforeEach(insertSeeds);
+    beforeEach(seedWidgets);
 
-    afterEach(clearSeeds);
+    afterEach(() => clearSeeds('widgets'));
 
     it('find() should return the documents', async () => {
       const client = await connect();
@@ -100,6 +86,33 @@ describe('connect()', () => {
       expect(names).toEqual(['widget', 'gadget', 'whatsit']);
 
       await client.close(true);
+    });
+  });
+});
+
+describe('connection()', () => {
+  it('should pass a mongo database to the function', async () => {
+    const database = await connection(db => db);
+
+    expect(database.databaseName).toEqual(DATABASE_NAME);
+  });
+
+  it('find() should return an empty array', async () => {
+    const widgets = await connection(findWidgets);
+
+    expect(widgets).toEqual([]);
+  });
+
+  describe('when there are many documents', () => {
+    beforeEach(seedWidgets);
+
+    afterEach(() => clearSeeds('widgets'));
+
+    it('find() should return the documents', async () => {
+      const widgets = await connection(findWidgets);
+      const names = widgets.map(widget => (widget.name));
+
+      expect(names).toEqual(['widget', 'gadget', 'whatsit']);
     });
   });
 });
